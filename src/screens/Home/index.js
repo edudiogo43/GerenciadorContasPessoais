@@ -26,11 +26,14 @@ const Home = ({ route }) => {
     const [aberto, setAberto] = useState(0)
     const [selectedStatus, setSelectedStatus] = useState(route.params?.selectedStatus);
 
+    const [selectedMonth, setSelectedMonth] = useState([]);
+
     const userId = route.params?.userId;
     const database = firebase.firestore();
     const isFocused = useIsFocused()
 
-    console.log("selectedStatus:", selectedStatus)
+    const totMonth = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+    const currentYear = new Date().getFullYear();
 
     const onchange = (text) => {
         if (text == null) return false
@@ -39,7 +42,13 @@ const Home = ({ route }) => {
         reloadBills(text);
     }
 
-    const createCustomAlertMsg = (title, message) => {
+    // const onchangeDate = (text) => {
+    //     //console.log(text)
+    //     setSelectedMonth(text);
+    //     reloadBills()
+    // }
+
+    const createCustomAlertLogoutMsg = (title, message) => {
 
         Alert.alert(
             title,
@@ -53,12 +62,12 @@ const Home = ({ route }) => {
                 {
                     text: "Sim", onPress: () => {
 
-                        firebase.auth().signOut().then(() => {
-                            navigation.navigate('SignIn');
-                        }).catch((error) => {
-                            console.log('Logout: ' + error);
-
-                        });
+                        firebase.auth().signOut()
+                            .then(() => {
+                                navigation.navigate('SignIn');
+                            }).catch((error) => {
+                                console.log('Logout: ' + error);
+                            });
 
                     }
                 }
@@ -67,7 +76,7 @@ const Home = ({ route }) => {
     }
 
     const doLogout = () => {
-        createCustomAlertMsg("Confirma", "Tem certeza que deseja sair ?");
+        createCustomAlertLogoutMsg("Confirma", "Tem certeza que deseja sair ?");
     }
 
     useEffect(() => {
@@ -173,7 +182,7 @@ const Home = ({ route }) => {
 
             <View style={{
                 paddingTop: 10,
-                height: 150,
+                height: 160,
                 width: '100%',
                 backgroundColor: '#9B51E0',
                 flexDirection: 'row',
@@ -193,10 +202,35 @@ const Home = ({ route }) => {
                         <Picker.Item label="Contas em Aberto" value={false} />
                     </Picker>
 
+                    {/* <Picker
+                        dropdownIconColor="#FFF"
+                        selectedValue={selectedMonth}
+                        style={{ width: 250, color: "#FFF", left: -8, marginTop: 5 }}
+                        onValueChange={(itemValue, itemIndex) => (
+                            onchangeDate(itemValue)
+                        )
+                        }>
+                        <Picker.Item label="Consulta por Período" value={null} />
+
+                        <Picker.Item label={`${totMonth[0]}` + " " + currentYear} value={['01/01/2021', '31/01/2021']} />
+                        <Picker.Item label={`${totMonth[1]}` + " " + currentYear} value={'01/02/2021'} />
+                        <Picker.Item label={`${totMonth[2]}` + " " + currentYear} value={'01/03/2021'} />
+                        <Picker.Item label={`${totMonth[3]}` + " " + currentYear} value={'01/04/2021'} />
+                        <Picker.Item label={`${totMonth[4]}` + " " + currentYear} value={'01/05/2021'} />
+                        <Picker.Item label={`${totMonth[5]}` + " " + currentYear} value={'01/06/2021'} />
+                        <Picker.Item label={`${totMonth[6]}` + " " + currentYear} value={'01/07/2021'} />
+                        <Picker.Item label={`${totMonth[7]}` + " " + currentYear} value={['01/08/2021', '31/08/2021']} />
+                        <Picker.Item label={`${totMonth[8]}` + " " + currentYear} value={['01/09/2021', '30/09/2021']} />
+                        <Picker.Item label={`${totMonth[9]}` + " " + currentYear} value={'01/10/2021'} />
+                        <Picker.Item label={`${totMonth[10]}` + " " + currentYear} value={'01/11/2021'} />
+                        <Picker.Item label={`${totMonth[11]}` + " " + currentYear} value={'01/12/2021'} />
+
+                    </Picker> */}
+
                     <View style={{ marginTop: 15 }} />
                     <View>
-                        <Text style={{ fontWeight: 'bold', color: "#FFF" }}>Despesas Pagas <Text style={{ color: '#FFF' }}>R$ {pago}</Text></Text>
-                        <Text style={{ fontWeight: 'bold', color: "#FFF" }}>Em aberto <Text style={{ color: '#FFF' }}>R$ {aberto}</Text></Text>
+                        <Text style={{ fontWeight: 'bold', color: "#FFF" }}>Contas Pagas <Text style={{ color: '#FFF' }}>R$ {pago}</Text></Text>
+                        <Text style={{ fontWeight: 'bold', color: "#000" }}>Contas Em aberto <Text style={{ color: '#000' }}>R$ {aberto}</Text></Text>
                     </View>
 
                 </View>
