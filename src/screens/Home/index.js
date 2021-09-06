@@ -1,78 +1,91 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useLayoutEffect } from 'react'
 import { StyleSheet, Text, View, TouchableOpacity, FlatList } from 'react-native'
 
 import { Picker } from '@react-native-picker/picker';
 
 import { ListItem, Avatar, Button, Icon } from 'react-native-elements'
 
+import { useIsFocused } from '@react-navigation/native'
+
 import { useNavigation } from '@react-navigation/core';
+
+import { Entypo } from '@expo/vector-icons';
 
 import firebase from '../../config/Firebase';
 import { Header } from 'react-native-elements/dist/header/Header';
 import { SafeAreaView } from 'react-native';
+import { Alert } from 'react-native';
 
+import { StatusBar } from 'expo-status-bar';
 
-const Home = ({ navigation, route }) => {
+const Home = ({ route }) => {
 
-    //const navigation = useNavigation();
+    const navigation = useNavigation();
     const [contas, setContas] = useState([]);
-
     const [pago, setPago] = useState(0);
     const [aberto, setAberto] = useState(0)
+    const [selectedStatus, setSelectedStatus] = useState(route.params?.selectedStatus);
 
     const userId = route.params?.userId;
-    //console.log(userId);
-    const [selectedStatus, setSelectedStatus] = useState(false);
-
     const database = firebase.firestore();
+    const isFocused = useIsFocused()
 
-    const forceReload = route.params?.forceReload;
-    if (forceReload)
-        reloadBills();
+    console.log("selectedStatus:", selectedStatus)
 
     const onchange = (text) => {
+        if (text == null) return false
+
         setSelectedStatus(text);
-        reloadBills();
+        reloadBills(text);
+    }
+
+    const createCustomAlertMsg = (title, message) => {
+
+        Alert.alert(
+            title,
+            message,
+            [
+                {
+                    text: "Não",
+                    onPress: () => { return false },
+                    style: "cancel"
+                },
+                {
+                    text: "Sim", onPress: () => {
+
+                        firebase.auth().signOut().then(() => {
+                            navigation.navigate('SignIn');
+                        }).catch((error) => {
+                            console.log('Logout: ' + error);
+
+                        });
+
+                    }
+                }
+            ]
+        );
     }
 
     const doLogout = () => {
-        firebase.auth().signOut().then(() => {
-            navigation.navigate('SignIn');
-        }).catch((error) => {
-            console.log('Logout: ' + error);
-        });
+        createCustomAlertMsg("Confirma", "Tem certeza que deseja sair ?");
     }
 
     useEffect(() => {
 
-        reloadBills();
+        calculateTotals();
+        reloadBills(selectedStatus);
 
-    }, [])
-
-    const deleteItem = (id) => {
-        database.collection("Tasks").doc(id).delete();
-        reloadBills();
-    }
-
-    const payItem = (id, status) => {
-        database.collection("Tasks").doc(id).update({
-            "status": status ? false : true
-        })
-        reloadBills();
-    }
+    }, [isFocused])
 
 
-    const reloadBills = () => {
+    const calculateTotals = () => {
 
         let abertos = 0;
         let pagos = 0;
 
-        database.collection("Tasks").where("status", "==", selectedStatus)
+        database.collection(userId)
             .get()
             .then((querySnapshot) => {
-                //onSnapshot((query) => {
-                //database.collection(userId).onSnapshot((query) => {
-                const list = [];
 
                 querySnapshot.forEach((doc) => {
 
@@ -82,92 +95,196 @@ const Home = ({ navigation, route }) => {
                     if (doc.data().status === false)
                         abertos = abertos + parseFloat(doc.data().valor);
 
-                    setPago(pagos);
-                    setAberto(abertos);
+                    setPago(pagos.toFixed(2));
+                    setAberto(abertos.toFixed(2));
+                })
+            })
 
+    }
+
+    const reloadBills = (status = false) => {
+
+        setContas([]);
+        let list = [];
+
+        database.collection(userId)
+
+            .where("status", "==", status)
+
+            .get()
+            .then((querySnapshot) => {
+
+                querySnapshot.forEach((doc) => {
                     list.push({ ...doc.data(), id: doc.id })
                 })
                 setContas(list);
             })
+
+
+    }
+
+    const addItem = () => {
+        navigation.navigate("New", { userId: userId })
+    }
+
+    const formatData = (dateAux) => {
+        return dateAux.substring(3, 5) + "/" + dateAux.substring(0, 2) + "/20" + dateAux.substring(6, 8)
+    }
+
+    const formatValor = (valAux) => {
+        return parseFloat(valAux).toFixed(2);
+    }
+
+    const editItem = (item) => {
+        navigation.navigate("Edit",
+            {
+                userId: userId,
+                id: item.id,
+                descricao: item.descricao,
+                data: formatData(item.data),
+                valor: item.valor,
+                tipo: item.tipo,
+                status: item.status,
+                selectedStatus: selectedStatus
+            })
+    }
+
+    const formatAvatarText = (description) => {
+
+        let splitedDescription = description.split(" ");
+        let avatarSuffix;
+
+        if (splitedDescription.length == 1)
+            avatarSuffix = description.toUpperCase().substring(0, 2)
+        else if (splitedDescription.length >= 2)
+            avatarSuffix = splitedDescription[0].toUpperCase().substring(0, 1) + splitedDescription[1].toUpperCase().substring(0, 1)
+
+        return avatarSuffix;
 
     }
 
     return (
         <SafeAreaView style={styles.container}>
 
-            <Header
-                rightComponent={
+            <StatusBar
+                style="light"
+            />
+
+
+            <View style={{
+                paddingTop: 10,
+                height: 150,
+                width: '100%',
+                backgroundColor: '#9B51E0',
+                flexDirection: 'row',
+                justifyContent: 'space-evenly'
+            }}>
+                <View style={{ paddingTop: 40, paddingHorizontal: 20, justifyContent: 'flex-start', alignItems: "flex-start", }}>
+                    <Picker
+                        dropdownIconColor="#FFF"
+                        selectedValue={selectedStatus}
+                        style={{ width: 250, color: "#FFF", left: -8 }}
+                        onValueChange={(itemValue, itemIndex) => (
+                            onchange(itemValue)
+                        )
+                        }>
+                        <Picker.Item label="Filtrar por Status" value={null} />
+                        <Picker.Item label="Contas Pagas" value={true} />
+                        <Picker.Item label="Contas em Aberto" value={false} />
+                    </Picker>
+
+                    <View style={{ marginTop: 15 }} />
+                    <View>
+                        <Text style={{ fontWeight: 'bold', color: "#FFF" }}>Despesas Pagas <Text style={{ color: '#FFF' }}>R$ {pago}</Text></Text>
+                        <Text style={{ fontWeight: 'bold', color: "#FFF" }}>Em aberto <Text style={{ color: '#FFF' }}>R$ {aberto}</Text></Text>
+                    </View>
+
+                </View>
+
+                <View style={{
+                    paddingTop: 40,
+                }}>
                     <TouchableOpacity
+                        style={{ width: 40, height: 40, backgroundColor: '#FFF', borderRadius: 20, justifyContent: 'center', alignItems: 'center' }}
                         onPress={() => doLogout()}
                     >
                         <Icon name="logout" color='#9B51E0' />
                     </TouchableOpacity>
-                }
-                centerComponent={{ text: '', style: {} }}
-                centerComponent={
-                    <View style={{ backgroundColor: 'white', width: '150%', padding: 10, justifyContent: 'flex-start' }}>
-                        <Picker
-                            selectedValue={selectedStatus}
-                            style={{ width: 250 }}
-                            onValueChange={(itemValue, itemIndex) =>
-                                onchange(itemValue)
-                            }>
-                            <Picker.Item label="Filtrar por Status" value={false} />
-                            <Picker.Item label=" - Contas Pagas" value={true} />
-                            <Picker.Item label=" - Contas em Aberto" value={false} />
-                        </Picker>
+                </View>
+            </View>
 
-                        <View style={{ marginBottom: 10 }} />
-                        <View>
-                            <Text style={{ fontWeight: 'bold' }}>Despesas Pagas <Text style={{ color: '#9B51E0' }}>R$ {pago}</Text></Text>
-                            <Text style={{ fontWeight: 'bold' }}>Em aberto <Text style={{ color: '#EB5757' }}>R$ {aberto}</Text></Text>
-                        </View>
-                    </View>
 
-                }
-            />
+            <View style={{
+                flex: 2
+            }}>
 
-            <FlatList
-                showsVerticalScrollIndicator={false}
-                data={contas}
-                renderItem={({ item }) => {
-                    return (
+                <FlatList
+                    style={{}}
+                    showsVerticalScrollIndicator={false}
+                    data={contas}
+                    renderItem={({ item }) => {
+                        return (
 
-                        <ListItem.Swipeable bottomDivider
 
-                            leftContent={
-                                <Button
-                                    onPress={() => payItem(item.id, item.status)}
-                                    title={item.status === false ? "Quitar" : "Desfazer"}
-                                    icon={{ name: 'info', color: 'white' }}
-                                    buttonStyle={{ minHeight: '100%' }}
+                            <ListItem
+                                key={item.id}
+                                bottomDivider
+                            >
+
+                                <Avatar
+                                    size="small"
+                                    rounded
+                                    title={formatAvatarText(item.descricao)}
+                                    containerStyle={{ backgroundColor: "#ccc", opacity: 0.7 }}
                                 />
-                            }
 
-                            rightContent={
-                                <Button
-                                    onPress={() => deleteItem(item.id)}
-                                    title="Apagar"
-                                    icon={{ name: 'delete', color: 'white' }}
-                                    buttonStyle={{ minHeight: '100%', backgroundColor: 'red' }}
+                                <ListItem.Content style={{}}>
+                                    <ListItem.Title>{item.descricao}</ListItem.Title>
+                                    <ListItem.Subtitle>R$ {formatValor(item.valor)}</ListItem.Subtitle>
+                                    <ListItem.Subtitle>{formatData(item.data.toString())}</ListItem.Subtitle>
+                                </ListItem.Content>
+                                <ListItem.Chevron
+                                    size={40}
+                                    onPress={() => editItem(item)}
                                 />
-                            }
 
-                        >
-                            <ListItem.Content>
-                                <ListItem.Title> {item.descricao}</ListItem.Title>
-                                <ListItem.Subtitle style={{ color: '#9B51E0', fontWeight: 'bold' }}>R$ {item.valor}</ListItem.Subtitle>
-                                {/* <ListItem.Subtitle style={{ color: '#E6E6E6' }}>{item.data.toDate().toLocaleDateString('pt-BR', { dateStyle: 'medium' })}</ListItem.Subtitle> */}
-                                <ListItem.Subtitle style={{ color: '#E6E6E6' }}>{item.data.toString()}</ListItem.Subtitle>
-                            </ListItem.Content>
-                            <ListItem.Chevron />
-                        </ListItem.Swipeable>
+                            </ListItem>
 
+                        )
+                    }}
+                />
+            </View>
 
-
-                    )
-                }}
-            />
+            <View style={{
+                flex: 0.25,
+                //backgroundColor: '#000',
+                width: '100%',
+                marginLeft: 0,
+                justifyContent: 'center',
+                alignItems: 'center',
+            }}>
+                <TouchableOpacity
+                    style={{
+                        backgroundColor: 'red',
+                        width: 60,
+                        height: 60,
+                        backgroundColor: '#9B51E0',
+                        borderRadius: 30,
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        elevation: 4,
+                        top: -20,
+                        shadowOpacity: 0.4,
+                        shadowColor: '#eee',
+                        justifyContent: 'flex-end',
+                        alignItems: 'flex-end',
+                        zIndex: 9999
+                    }}
+                    onPress={() => addItem()}
+                >
+                    <Entypo name="plus" size={60} color="#FFF" />
+                </TouchableOpacity>
+            </View>
 
 
         </SafeAreaView>
@@ -180,9 +297,7 @@ const styles = StyleSheet.create({
     container: {
         backgroundColor: '#FFF',
         flex: 1,
-        paddingTop: 10,
     }
-
     ,
     dropdown: {
         backgroundColor: 'white',

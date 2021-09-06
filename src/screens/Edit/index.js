@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import { StyleSheet, Text, View, TouchableOpacity, Button } from 'react-native'
 
 import { Header, Icon } from 'react-native-elements';
-import { Entypo } from '@expo/vector-icons';
+import { FontAwesome } from '@expo/vector-icons';
 import { TextInput } from 'react-native';
 
 import { Picker } from '@react-native-picker/picker';
@@ -21,10 +21,13 @@ const New = ({ navigation, route }) => {
 
     const database = firebase.firestore();
 
-    const [selectedDespesa, setSelectedDespesa] = useState("1");
-    const [descricao, setDescricao] = useState();
-    const [vencimento, setVencimento] = useState();
-    const [valor, setValor] = useState();
+    const [selectedDespesa, setSelectedDespesa] = useState(route.params?.tipo);
+    const [descricao, setDescricao] = useState(route.params?.descricao);
+    const [vencimento, setVencimento] = useState(route.params?.data);
+    const [valor, setValor] = useState(route.params?.valor);
+    const [id, setId] = useState(route.params?.id);
+    const [status, setStatus] = useState(route.params?.status);
+    const [selectedStatus, setSelectedStatus] = useState(route.params?.selectedStatus);
 
     const [date, setDate] = useState(new Date());
     const [mode, setMode] = useState('date');
@@ -40,15 +43,15 @@ const New = ({ navigation, route }) => {
         const currentDate = selectedDate || date;
         setShow(false);
 
-        let dateAux = currentDate.toLocaleDateString('pt-BR', { dateStyle: 'short' });
-        let newDate = dateAux.substring(3, 5) + "/" + dateAux.substring(0, 2) + "/20" + dateAux.substring(6, 8)
+        // let dateAux = currentDate.toLocaleDateString('pt-BR', { dateStyle: 'short' });
+        // let newDate = dateAux.substring(3, 5) + "/" + dateAux.substring(0, 2) + "/20" + dateAux.substring(6, 8)
 
-        setVencimento(newDate);
+        setVencimento(currentDate);
         setDate(currentDate);
 
     };
 
-    const addConta = () => {
+    const editConta = () => {
 
         if (!descricao || !vencimento || !valor || !selectedDespesa) {
             Alert.alert("Atenção", "Preencha todos os campos !");
@@ -60,16 +63,103 @@ const New = ({ navigation, route }) => {
             "data": vencimento,
             "valor": valor,
             "tipo": selectedDespesa,
-            "status": false,
+            "status": status,
         }
 
-        database.collection(userId).add(
+        database.collection(userId).doc(id).update(
             data
         )
 
         navigation.navigate("HomeScreen", {
-            userId: userId
+            userId: userId,
+            selectedStatus: selectedStatus
         })
+    }
+
+    const deleteItem = () => {
+
+        Alert.alert(
+            "Atenção",
+            "Deseja deletar essa conta ?",
+            [
+                {
+                    text: "Não",
+                    onPress: () => { return false },
+                    style: "cancel"
+                },
+                {
+                    text: "Sim", onPress: () => {
+
+                        database.collection(userId).doc(id).delete();
+
+                        navigation.navigate("HomeScreen", {
+                            userId: userId
+                        })
+
+
+                    }
+                }
+            ]
+        );
+
+    }
+
+    const undoItem = () => {
+
+        Alert.alert(
+            "Atenção",
+            "Tem certeza que deseja desfazer a baixa dessa conta ?",
+            [
+                {
+                    text: "Não",
+                    onPress: () => { return false },
+                    style: "cancel"
+                },
+                {
+                    text: "Sim", onPress: () => {
+
+                        database.collection(userId).doc(id).update({
+                            status: false,
+                        });
+
+                        navigation.navigate("HomeScreen", {
+                            userId: userId
+                        })
+
+
+                    }
+                }
+            ]
+        );
+
+    }
+
+    const payItem = () => {
+        Alert.alert(
+            "Atenção",
+            "Tem certeza que deseja Pagar essa conta ?",
+            [
+                {
+                    text: "Não",
+                    onPress: () => { return false },
+                    style: "cancel"
+                },
+                {
+                    text: "Sim", onPress: () => {
+
+                        database.collection(userId).doc(id).update({
+                            status: true,
+                        });
+
+                        navigation.navigate("HomeScreen", {
+                            userId: userId
+                        })
+
+
+                    }
+                }
+            ]
+        );
     }
 
     return (
@@ -82,10 +172,10 @@ const New = ({ navigation, route }) => {
                 rightComponent={
                     <View style={{ height: 100, justifyContent: 'center' }}>
                         <TouchableOpacity
-                            onPress={() => addConta()}
+                            onPress={() => editConta()}
                         >
                             <View style={styles.buttonHeader}>
-                                <Entypo name="plus" size={36} color="#9B51E0" />
+                                <FontAwesome name="edit" size={26} color="#9B51E0" />
                             </View>
                         </TouchableOpacity>
                     </View>
@@ -93,7 +183,7 @@ const New = ({ navigation, route }) => {
 
                 centerComponent={
                     <View style={{ width: '100%', justifyContent: 'center', alignItems: 'flex-start', height: 100 }}>
-                        <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#FFF' }}>Incluindo uma conta</Text>
+                        <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#FFF' }}>Editando uma conta</Text>
                     </View>
                 }
             />
@@ -174,6 +264,32 @@ const New = ({ navigation, route }) => {
 
             </View>
 
+            {!status &&
+                <TouchableOpacity
+                    style={styles.buttonUndo}
+                    onPress={() => payItem()}
+                >
+                    <Text style={styles.buttonUndoText}>Pagar Conta</Text>
+                </TouchableOpacity>
+            }
+
+            {status &&
+                <TouchableOpacity
+                    style={styles.buttonUndo}
+                    onPress={() => undoItem()}
+                >
+                    <Text style={styles.buttonUndoText}>Desfazer Baixa</Text>
+                </TouchableOpacity>
+            }
+
+            <TouchableOpacity
+                style={styles.buttonDelete}
+                onPress={() => deleteItem()}
+            >
+                <Text style={styles.buttonDeleteText}>Excluir Conta</Text>
+            </TouchableOpacity>
+
+
 
         </KeyboardAvoidingView>
     )
@@ -240,5 +356,39 @@ const styles = StyleSheet.create({
         borderColor: '#cacaca',
         borderWidth: 1,
         marginBottom: 20,
+    },
+    buttonDelete: {
+        margin: 10,
+        padding: 10,
+        width: 360,
+        height: 59,
+        backgroundColor: 'red',
+        borderRadius: 40,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginTop: 5,
+
+
+    },
+    buttonDeleteText: {
+        color: '#FFF',
+        fontSize: 16,
+        fontWeight: 'bold'
+    },
+    buttonUndo: {
+        margin: 10,
+        padding: 10,
+        width: 360,
+        height: 59,
+        backgroundColor: '#FFF',
+        borderRadius: 40,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginTop: 15,
+    },
+    buttonUndoText: {
+        color: '#000',
+        fontSize: 16,
+        fontWeight: 'bold'
     },
 })

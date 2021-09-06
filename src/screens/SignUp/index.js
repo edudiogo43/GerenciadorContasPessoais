@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { KeyboardAvoidingView, Platform, StyleSheet, Text, View, TextInput, TouchableOpacity, Image, Alert } from 'react-native'
+import { KeyboardAvoidingView, Platform, StyleSheet, Text, View, TextInput, TouchableOpacity, Image, Alert, ActivityIndicator } from 'react-native'
 import { useNavigation } from '@react-navigation/core';
 
 import firebase from '../../config/Firebase';
@@ -9,6 +9,7 @@ const SignIn = () => {
 
     const [email, setEmail] = useState(null);
     const [password, setPassword] = useState(null);
+    const [loading, setLoading] = useState(false);
 
     const database = firebase.firestore();
 
@@ -22,9 +23,18 @@ const SignIn = () => {
 
     const doSignUp = () => {
 
+        if (!email || !password) {
+            Alert.alert("Atenção", "Email e Senha são obrigatórios!");
+            return false;
+        }
+
+        setLoading(true);
+
         firebase.auth().createUserWithEmailAndPassword(email, password)
             .then((userCredential) => {
                 let user = userCredential.user;
+
+                setLoading(false);
 
                 navigation.navigate('HomeScreen', {
                     userId: user.uid
@@ -32,8 +42,20 @@ const SignIn = () => {
 
             })
             .catch((error) => {
-                //Alert.alert('Atenção', 'Não foi possível criar seu usuário, tente novamente mais tarde!');
-                alert(error)
+
+                if (error.toString().toUpperCase().includes("AT LEAST")) {
+                    Alert.alert("Atenção", "O campo senha deve conter pelo o menos 6 caracteres !");
+                }
+
+                if (error.toString().toUpperCase().includes("IS BADLY FORMATTED")) {
+                    Alert.alert("Atenção", "O campo e-mail não foi devidamente preenchido !");
+                }
+
+                if (error.toString().toUpperCase().includes("IS ALREADY IN USE")) {
+                    Alert.alert("Atenção", "Este e-email já está em uso por outro usuário !");
+                }
+
+                setLoading(false);
             });
     }
 
@@ -73,8 +95,20 @@ const SignIn = () => {
             <TouchableOpacity
                 onPress={doSignUp}
                 style={styles.button}
+                disabled={loading}
             >
-                <Text style={styles.textButton}>Cadastrar</Text>
+
+                {!loading &&
+                    <Text style={styles.textButton}>Cadastrar</Text>
+                }
+
+                {loading &&
+                    <ActivityIndicator
+                        size="large"
+                        color="#FFF"
+                    />
+                }
+
             </TouchableOpacity>
 
             <View style={{

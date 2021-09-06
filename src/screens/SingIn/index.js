@@ -3,12 +3,14 @@ import { Alert, KeyboardAvoidingView, Platform, StyleSheet, Text, View, TextInpu
 import { useNavigation } from '@react-navigation/core';
 
 import firebase from '../../config/Firebase';
+import { ActivityIndicator } from 'react-native';
 
 const SignIn = (props) => {
     const navigation = useNavigation();
 
     const [email, setEmail] = useState(null);
     const [password, setPassword] = useState(null);
+    const [loading, setLoading] = useState(false);
 
     const database = firebase.firestore();
 
@@ -19,16 +21,16 @@ const SignIn = (props) => {
     // });
 
     useEffect(() => {
-        // firebase.auth().onAuthStateChanged((user) => {
-        //     if (user) {
-        //         console.log(user.uid);
-        //         navigation.navigate('HomeScreen', {
-        //             "userId": user.uid
-        //         })
-        //     }
-        // })
 
-        navigation.navigate('HomeScreen');
+        firebase.auth().onAuthStateChanged((user) => {
+            if (user) {
+                console.log(user.uid);
+                navigation.navigate('HomeScreen', {
+                    "userId": user.uid
+                })
+            }
+        })
+
     }, [])
 
 
@@ -42,9 +44,18 @@ const SignIn = (props) => {
 
     const doSignIn = () => {
 
+        if (!email || !password) {
+            Alert.alert("Atenção", "Email e Senha são obrigatórios!");
+            return false;
+        }
+
+        setLoading(true);
+
         firebase.auth().signInWithEmailAndPassword(email, password)
             .then((userCredential) => {
                 let user = userCredential.user;
+
+                setLoading(false);
 
                 navigation.navigate('HomeScreen', {
                     userId: user.uid
@@ -52,15 +63,28 @@ const SignIn = (props) => {
 
             })
             .catch((error) => {
-                Alert.alert('Atenção', 'Não foi possível efetuar seu login no momento, tente novamente mais tarde!');
+
+                if (error.toString().toUpperCase().includes("IS INVALID OR THE USER DOES NOT")) {
+                    Alert.alert("Atenção", "Verifique se você digitou corretamente o email e a senha do usuário");
+                }
+
+                if (error.toString().toUpperCase().includes("IS BADLY FORMATTED")) {
+                    Alert.alert("Atenção", "O campo e-mail não foi devidamente preenchido !");
+                }
+
+                if (error.toString().toUpperCase().includes("HAS BEEN TEMPORARILY DISABLED")) {
+                    Alert.alert("Atenção", "Atenção seu login foi desabilitado temporariamente devido a varias tentativas invalidas. Tente novamente mais tarde");
+                }
+
+                setLoading(false);
             });
 
     }
 
     return (
-        <KeyboardAvoidingView
+        <View
             style={styles.container}
-            behavior={Platform.OS === "ios" ? "padding" : "height"}
+            behavior={Platform.OS === "ios" ? "height" : "padding"}
         >
 
             <Text style={styles.title}>Bem vindo de Volta !</Text>
@@ -92,8 +116,19 @@ const SignIn = (props) => {
             <TouchableOpacity
                 onPress={doSignIn}
                 style={styles.button}
+                disabled={loading}
             >
-                <Text style={styles.textButton}>Entrar</Text>
+                {!loading &&
+                    <Text style={styles.textButton}>Entrar</Text>
+                }
+
+                {loading &&
+                    <ActivityIndicator
+                        size="large"
+                        color="#FFF"
+                    />
+                }
+
             </TouchableOpacity>
 
             <View style={{
@@ -117,7 +152,7 @@ const SignIn = (props) => {
                 />
             </View>
 
-        </KeyboardAvoidingView>
+        </View>
     )
 }
 
