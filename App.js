@@ -6,7 +6,7 @@ import Signup from './src/screens/SignUp';
 import Home from './src/screens/Home';
 import New from './src/screens/New';
 import Edit from './src/screens/Edit';
-import Splash from './src/screens/Splash';
+//import Splash from './src/screens/Splash';
 
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
@@ -17,7 +17,7 @@ export default function App() {
 
   return (
     <NavigationContainer>
-      <Stack.Navigator initialRouteName="SplashScreen">
+      <Stack.Navigator initialRouteName="SignIn">
         <Stack.Screen name="SignIn" component={SignIn}
           options={{
             headerShown: false,
@@ -58,14 +58,14 @@ export default function App() {
             }
           }}
         />
-        <Stack.Screen name="SplashScreen" component={Splash}
+        {/* <Stack.Screen name="SplashScreen" component={Splash}
           options={{
             headerShown: false,
             contentStyle: {
               backgroundColor: '#FFF'
             }
-          }}
-        />
+          }} 
+        />*/}
       </Stack.Navigator>
     </NavigationContainer>
   );

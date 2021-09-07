@@ -61,7 +61,7 @@ const SignIn = () => {
 
 
     return (
-        <KeyboardAvoidingView
+        <View
             style={styles.container}
             behavior={Platform.OS === "ios" ? "padding" : "height"}
         >
@@ -114,7 +114,7 @@ const SignIn = () => {
             <View style={{
                 justifyContent: 'center',
                 alignItems: 'center',
-                marginTop: 5
+                marginTop: 20
             }}>
                 <TouchableOpacity
                     onPress={() => navigation.navigate('SignIn')}
@@ -132,7 +132,7 @@ const SignIn = () => {
                 />
             </View>
 
-        </KeyboardAvoidingView>
+        </View>
     )
 }
 

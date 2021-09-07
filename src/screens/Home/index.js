@@ -12,7 +12,6 @@ import { useNavigation } from '@react-navigation/core';
 import { Entypo } from '@expo/vector-icons';
 
 import firebase from '../../config/Firebase';
-import { Header } from 'react-native-elements/dist/header/Header';
 import { SafeAreaView } from 'react-native';
 import { Alert } from 'react-native';
 
@@ -25,15 +24,17 @@ const Home = ({ route }) => {
     const [pago, setPago] = useState(0);
     const [aberto, setAberto] = useState(0)
     const [selectedStatus, setSelectedStatus] = useState(route.params?.selectedStatus);
-
-    const [selectedMonth, setSelectedMonth] = useState([]);
+    const [selectedMonth, setSelectedMonth] = useState();
+    const [visible, setVisible] = useState(false);
 
     const userId = route.params?.userId;
     const database = firebase.firestore();
     const isFocused = useIsFocused()
 
-    const totMonth = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+    const monthNames = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+
     const currentYear = new Date().getFullYear();
+    const [currentMonth, setCurrentMonth] = useState(new Date().getMonth());
 
     const onchange = (text) => {
         if (text == null) return false
@@ -41,12 +42,6 @@ const Home = ({ route }) => {
         setSelectedStatus(text);
         reloadBills(text);
     }
-
-    // const onchangeDate = (text) => {
-    //     //console.log(text)
-    //     setSelectedMonth(text);
-    //     reloadBills()
-    // }
 
     const createCustomAlertLogoutMsg = (title, message) => {
 
@@ -84,6 +79,14 @@ const Home = ({ route }) => {
         calculateTotals();
         reloadBills(selectedStatus);
 
+        if (!selectedMonth) {
+            console.log("nao achou selectedMonth")
+            setSelectedMonth(monthNames[currentMonth]);
+        }
+
+        console.log(selectedMonth);
+
+
     }, [isFocused])
 
 
@@ -119,6 +122,9 @@ const Home = ({ route }) => {
         database.collection(userId)
 
             .where("status", "==", status)
+
+            // .where("data", ">=", "09/01/2021")
+            // .where("data", "<=", "09/30/2021")
 
             .get()
             .then((querySnapshot) => {
@@ -172,6 +178,24 @@ const Home = ({ route }) => {
 
     }
 
+    const previousMonth = () => {
+        if (currentMonth > 0) {
+            let indexMonth = currentMonth;
+            indexMonth = indexMonth - 1;
+            setCurrentMonth(indexMonth);
+            setSelectedMonth(monthNames[indexMonth]);
+        }
+    }
+
+    const nextMonth = () => {
+        if (currentMonth < 11) {
+            let indexMonth = currentMonth;
+            indexMonth = indexMonth + 1;
+            setCurrentMonth(indexMonth)
+            setSelectedMonth(monthNames[indexMonth]);
+        }
+    }
+
     return (
         <SafeAreaView style={styles.container}>
 
@@ -179,16 +203,15 @@ const Home = ({ route }) => {
                 style="light"
             />
 
-
             <View style={{
-                paddingTop: 10,
-                height: 160,
+                paddingTop: 5,
+                height: 180,
                 width: '100%',
                 backgroundColor: '#9B51E0',
                 flexDirection: 'row',
-                justifyContent: 'space-evenly'
+                justifyContent: 'space-around'
             }}>
-                <View style={{ paddingTop: 40, paddingHorizontal: 20, justifyContent: 'flex-start', alignItems: "flex-start", }}>
+                <View style={{ paddingTop: 50, paddingHorizontal: 40, justifyContent: 'flex-start', alignItems: "flex-start", }}>
                     <Picker
                         dropdownIconColor="#FFF"
                         selectedValue={selectedStatus}
@@ -202,41 +225,64 @@ const Home = ({ route }) => {
                         <Picker.Item label="Contas em Aberto" value={false} />
                     </Picker>
 
-                    {/* <Picker
-                        dropdownIconColor="#FFF"
-                        selectedValue={selectedMonth}
-                        style={{ width: 250, color: "#FFF", left: -8, marginTop: 5 }}
-                        onValueChange={(itemValue, itemIndex) => (
-                            onchangeDate(itemValue)
-                        )
-                        }>
-                        <Picker.Item label="Consulta por Período" value={null} />
+                    <View style={{ marginTop: 15, flexDirection: 'row', justifyContent: 'space-evenly', width: '100%' }}>
 
-                        <Picker.Item label={`${totMonth[0]}` + " " + currentYear} value={['01/01/2021', '31/01/2021']} />
-                        <Picker.Item label={`${totMonth[1]}` + " " + currentYear} value={'01/02/2021'} />
-                        <Picker.Item label={`${totMonth[2]}` + " " + currentYear} value={'01/03/2021'} />
-                        <Picker.Item label={`${totMonth[3]}` + " " + currentYear} value={'01/04/2021'} />
-                        <Picker.Item label={`${totMonth[4]}` + " " + currentYear} value={'01/05/2021'} />
-                        <Picker.Item label={`${totMonth[5]}` + " " + currentYear} value={'01/06/2021'} />
-                        <Picker.Item label={`${totMonth[6]}` + " " + currentYear} value={'01/07/2021'} />
-                        <Picker.Item label={`${totMonth[7]}` + " " + currentYear} value={['01/08/2021', '31/08/2021']} />
-                        <Picker.Item label={`${totMonth[8]}` + " " + currentYear} value={['01/09/2021', '30/09/2021']} />
-                        <Picker.Item label={`${totMonth[9]}` + " " + currentYear} value={'01/10/2021'} />
-                        <Picker.Item label={`${totMonth[10]}` + " " + currentYear} value={'01/11/2021'} />
-                        <Picker.Item label={`${totMonth[11]}` + " " + currentYear} value={'01/12/2021'} />
+                        <View style={{ justifyContent: 'center', alignItems: 'center' }}>
+                            <Text style={{ fontWeight: 'bold', color: "#CCC", fontSize: 12 }}>Contas Pagas </Text>
+                            <Text style={{ fontWeight: 'bold', color: "#FFF", fontSize: 15 }}>{visible ? "R$ " + pago : "-"}</Text>
+                        </View>
 
-                    </Picker> */}
+                        <View style={{ justifyContent: 'center', alignItems: 'center' }}>
+                            <TouchableOpacity
+                                onPress={() => setVisible(!visible)}
+                            >
+                                <Text />
+                                <Entypo name={visible ? "eye" : "eye-with-line"} size={24} color="#FFF" />
 
-                    <View style={{ marginTop: 15 }} />
-                    <View>
-                        <Text style={{ fontWeight: 'bold', color: "#FFF" }}>Contas Pagas <Text style={{ color: '#FFF' }}>R$ {pago}</Text></Text>
-                        <Text style={{ fontWeight: 'bold', color: "#000" }}>Contas Em aberto <Text style={{ color: '#000' }}>R$ {aberto}</Text></Text>
+                            </TouchableOpacity>
+                        </View>
+
+                        <View style={{ justifyContent: 'center', alignItems: 'center' }}>
+                            <Text style={{ fontWeight: 'bold', color: "#CCC", fontSize: 12 }}>Em aberto</Text>
+                            <Text style={{ fontWeight: 'bold', color: "#FFF", fontSize: 15 }}> {visible ? "R$ " + aberto : "-"}</Text>
+                        </View>
+
+                    </View>
+
+                    <View style={{
+                        width: '100%',
+                        marginTop: 10,
+                        flexDirection: 'row',
+                        justifyContent: 'space-evenly',
+                        alignItems: 'center'
+                    }}>
+
+                        <TouchableOpacity
+                            onPress={() => previousMonth()}
+                        >
+                            <Entypo name="chevron-left" size={26} color="white" />
+                        </TouchableOpacity>
+
+                        <Text style={{
+                            fontSize: 14,
+                            color: '#CCC'
+                        }}>{selectedMonth}</Text>
+
+                        <TouchableOpacity
+                            onPress={() => nextMonth()}
+                        >
+                            <Entypo name="chevron-right" size={26} color="white" />
+                        </TouchableOpacity>
+
                     </View>
 
                 </View>
 
+
+
                 <View style={{
                     paddingTop: 40,
+                    right: 30
                 }}>
                     <TouchableOpacity
                         style={{ width: 40, height: 40, backgroundColor: '#FFF', borderRadius: 20, justifyContent: 'center', alignItems: 'center' }}
@@ -245,6 +291,7 @@ const Home = ({ route }) => {
                         <Icon name="logout" color='#9B51E0' />
                     </TouchableOpacity>
                 </View>
+
             </View>
 
 

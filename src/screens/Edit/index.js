@@ -12,8 +12,6 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 
 import { AntDesign } from '@expo/vector-icons';
 
-import { useNavigation } from '@react-navigation/core';
-
 import firebase from '../../config/Firebase';
 import { Alert } from 'react-native';
 
@@ -24,7 +22,7 @@ const New = ({ navigation, route }) => {
     const [selectedDespesa, setSelectedDespesa] = useState(route.params?.tipo);
     const [descricao, setDescricao] = useState(route.params?.descricao);
     const [vencimento, setVencimento] = useState(route.params?.data);
-    const [valor, setValor] = useState(route.params?.valor);
+    const [valor, setValor] = useState(parseFloat(route.params?.valor).toFixed(2));
     const [id, setId] = useState(route.params?.id);
     const [status, setStatus] = useState(route.params?.status);
     const [selectedStatus, setSelectedStatus] = useState(route.params?.selectedStatus);
@@ -188,110 +186,115 @@ const New = ({ navigation, route }) => {
                 }
             />
 
-            <View style={styles.textFieldView}>
-                <Text style={styles.labelField}>Descrição resumida</Text>
-                <TextInput
-                    style={styles.textField}
-                    placeholder="Digite a descrição da despesa"
-                    value={descricao}
-                    onChangeText={(text) => setDescricao(text)}
-                />
-            </View>
+            <View style={{
+                padding: 10
+            }}>
 
-            <Text style={styles.labelFieldPicker}>Tipo de despesa</Text>
-            <View style={styles.textPickerView}>
-                <Picker
-                    selectedValue={selectedDespesa}
-                    onValueChange={(itemValue, itemIndex) =>
-                        onchangePicker(itemValue)
-                    }>
-                    <Picker.Item label="Despesas Fixas" value="1" />
-                    <Picker.Item label="Cartão de Crédito" value="2" />
-                    <Picker.Item label="Internet" value="3" />
-                    <Picker.Item label="Empréstimo" value="4" />
-                    <Picker.Item label="Veículos" value="5" />
-                    <Picker.Item label="Impostos" value="6" />
-                    <Picker.Item label="Vestuário" value="7" />
-                    <Picker.Item label="Educação" value="8" />
-                    <Picker.Item label="TED/DOC/PIX" value="9" />
-                    <Picker.Item label="Outros" value="10" />
-                </Picker>
-            </View>
+                <View style={styles.textFieldView}>
+                    <Text style={styles.labelField}>Descrição resumida</Text>
+                    <TextInput
+                        style={styles.textField}
+                        placeholder="Digite a descrição da despesa"
+                        value={descricao}
+                        onChangeText={(text) => setDescricao(text)}
+                    />
+                </View>
 
-            <View style={styles.textFieldView}>
-                <Text style={styles.labelField}>Valor da Conta</Text>
-                <TextInput
-                    keyboardType="numeric"
-                    style={styles.textField}
-                    placeholder="Digite o valor da conta"
-                    value={valor}
-                    onChangeText={(text) => setValor(text)}
-                />
-            </View>
+                <Text style={styles.labelFieldPicker}>Tipo de despesa</Text>
+                <View style={styles.textPickerView}>
+                    <Picker
+                        selectedValue={selectedDespesa}
+                        onValueChange={(itemValue, itemIndex) =>
+                            onchangePicker(itemValue)
+                        }>
+                        <Picker.Item label="Despesas Fixas" value="1" />
+                        <Picker.Item label="Cartão de Crédito" value="2" />
+                        <Picker.Item label="Internet" value="3" />
+                        <Picker.Item label="Empréstimo" value="4" />
+                        <Picker.Item label="Veículos" value="5" />
+                        <Picker.Item label="Impostos" value="6" />
+                        <Picker.Item label="Vestuário" value="7" />
+                        <Picker.Item label="Educação" value="8" />
+                        <Picker.Item label="TED/DOC/PIX" value="9" />
+                        <Picker.Item label="Outros" value="10" />
+                    </Picker>
+                </View>
 
-
-            <View style={styles.textFieldView}>
-                <Text style={styles.labelField}>Data de Vencimento</Text>
-                <View style={{ flexDirection: 'row' }}>
+                <View style={styles.textFieldView}>
+                    <Text style={styles.labelField}>Valor da Conta</Text>
                     <TextInput
                         keyboardType="numeric"
-                        style={styles.calendarField}
-                        placeholder="Data de vencimento do documento"
-                        value={vencimento}
-                        editable={false}
+                        style={styles.textField}
+                        placeholder="Digite o valor da conta"
+                        value={valor}
+                        onChangeText={(text) => setValor(text)}
                     />
+                </View>
 
-                    <TouchableOpacity
-                        onPress={() => setShow(true)}
-                    >
-                        <AntDesign name="calendar" size={40} color="white" />
-                    </TouchableOpacity>
+
+                <View style={[styles.textFieldView], { marginTop: 10 }}>
+                    <Text style={styles.labelField}>Data de Vencimento</Text>
+                    <View style={{ flexDirection: 'row' }}>
+                        <TextInput
+                            keyboardType="numeric"
+                            style={styles.calendarField}
+                            placeholder="Data de vencimento do documento"
+                            value={vencimento}
+                            editable={false}
+                        />
+
+                        <TouchableOpacity
+                            onPress={() => setShow(true)}
+                        >
+                            <AntDesign name="calendar" size={40} color="#BDBDBD" />
+                        </TouchableOpacity>
+
+                    </View>
+                </View>
+
+                <View>
+                    {show && (<DateTimePicker
+                        testID="dateTimePicker"
+                        value={date}
+                        mode={mode}
+                        is24Hour={true}
+                        display="default"
+                        onChange={onChange}
+                    />
+                    )}
+
 
                 </View>
+
+                {!status &&
+                    <TouchableOpacity
+                        style={styles.buttonUndo}
+                        onPress={() => payItem()}
+                    >
+                        <Text style={styles.buttonUndoText}>Pagar Conta</Text>
+                    </TouchableOpacity>
+                }
+
+                {status &&
+                    <TouchableOpacity
+                        style={styles.buttonUndo}
+                        onPress={() => undoItem()}
+                    >
+                        <Text style={styles.buttonUndoText}>Desfazer Baixa</Text>
+                    </TouchableOpacity>
+                }
+
+                <TouchableOpacity
+                    style={styles.buttonDelete}
+                    onPress={() => deleteItem()}
+                >
+                    <Text style={styles.buttonDeleteText}>Excluir Conta</Text>
+                </TouchableOpacity>
+
             </View>
 
-            <View>
-                {show && (<DateTimePicker
-                    testID="dateTimePicker"
-                    value={date}
-                    mode={mode}
-                    is24Hour={true}
-                    display="default"
-                    onChange={onChange}
-                />
-                )}
 
-
-            </View>
-
-            {!status &&
-                <TouchableOpacity
-                    style={styles.buttonUndo}
-                    onPress={() => payItem()}
-                >
-                    <Text style={styles.buttonUndoText}>Pagar Conta</Text>
-                </TouchableOpacity>
-            }
-
-            {status &&
-                <TouchableOpacity
-                    style={styles.buttonUndo}
-                    onPress={() => undoItem()}
-                >
-                    <Text style={styles.buttonUndoText}>Desfazer Baixa</Text>
-                </TouchableOpacity>
-            }
-
-            <TouchableOpacity
-                style={styles.buttonDelete}
-                onPress={() => deleteItem()}
-            >
-                <Text style={styles.buttonDeleteText}>Excluir Conta</Text>
-            </TouchableOpacity>
-
-
-
-        </KeyboardAvoidingView>
+        </KeyboardAvoidingView >
     )
 }
 
@@ -300,7 +303,7 @@ export default New
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#9B51E0'
+        backgroundColor: '#FFF'
     },
     buttonHeader: {
         width: 58,
@@ -311,32 +314,34 @@ const styles = StyleSheet.create({
         alignItems: 'center'
     },
     textFieldView: {
-        padding: 10,
+        //padding: 10,
     },
     calFieldView: {
         backgroundColor: 'red',
         padding: 10,
     },
     labelFieldPicker: {
+        marginLeft: -10,
         padding: 10,
-        color: '#FFF',
+        color: '#BDBDBD',
         fontWeight: 'bold',
     },
     textPickerView: {
         borderRadius: 8,
-        marginLeft: 10,
+        //marginLeft: 10,
         padding: 10,
-        backgroundColor: '#FFF',
-        width: 360,
+        backgroundColor: '#F2F2F2',
+        width: '100%',
         height: 47,
+        marginBottom: 10,
     },
     labelField: {
-        color: '#FFF',
+        color: '#BDBDBD',
         fontWeight: 'bold',
         marginBottom: 10,
     },
     textField: {
-        width: 360,
+        width: '100%',
         backgroundColor: '#F2F2F2',
         height: 47,
         borderRadius: 8,
@@ -358,17 +363,14 @@ const styles = StyleSheet.create({
         marginBottom: 20,
     },
     buttonDelete: {
-        margin: 10,
         padding: 10,
-        width: 360,
+        width: '100%',
         height: 59,
         backgroundColor: 'red',
         borderRadius: 40,
         justifyContent: 'center',
         alignItems: 'center',
-        marginTop: 5,
-
-
+        marginTop: 10,
     },
     buttonDeleteText: {
         color: '#FFF',
@@ -376,18 +378,17 @@ const styles = StyleSheet.create({
         fontWeight: 'bold'
     },
     buttonUndo: {
-        margin: 10,
         padding: 10,
-        width: 360,
+        width: '100%',
         height: 59,
-        backgroundColor: '#FFF',
+        backgroundColor: '#9B51E0',
         borderRadius: 40,
         justifyContent: 'center',
         alignItems: 'center',
         marginTop: 15,
     },
     buttonUndoText: {
-        color: '#000',
+        color: '#FFF',
         fontSize: 16,
         fontWeight: 'bold'
     },

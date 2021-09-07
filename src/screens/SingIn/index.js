@@ -134,7 +134,7 @@ const SignIn = (props) => {
             <View style={{
                 justifyContent: 'center',
                 alignItems: 'center',
-                marginTop: 5
+                marginTop: 20
             }}>
                 <TouchableOpacity
                     onPress={() => navigation.navigate('SignUp')}
