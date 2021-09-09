@@ -1,5 +1,7 @@
 # Gerenciador Financeiro Pessoal
 
+<img src="./src/images/bg.png">
+
 ## Author
 Eduardo Diogo Garcia
 eduardo.diogo@gmail.com

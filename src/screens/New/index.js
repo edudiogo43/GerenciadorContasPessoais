@@ -12,7 +12,7 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 
 import { AntDesign } from '@expo/vector-icons';
 
-import { useNavigation } from '@react-navigation/core';
+import moment from 'moment';
 
 import firebase from '../../config/Firebase';
 import { Alert } from 'react-native';
@@ -26,6 +26,9 @@ const New = ({ navigation, route }) => {
     const [vencimento, setVencimento] = useState();
     const [valor, setValor] = useState();
 
+    require('moment/locale/pt-br');
+    moment.locale("pt-br");
+
     const [date, setDate] = useState(new Date());
     const [mode, setMode] = useState('date');
     const [show, setShow] = useState(false);
@@ -37,14 +40,20 @@ const New = ({ navigation, route }) => {
     }
 
     const onChange = (event, selectedDate) => {
+
+        console.log("passando aqui ...")
+
         const currentDate = selectedDate || date;
         setShow(false);
 
-        let dateAux = currentDate.toLocaleDateString('pt-BR', { dateStyle: 'short' });
-        let newDate = dateAux.substring(3, 5) + "/" + dateAux.substring(0, 2) + "/20" + dateAux.substring(6, 8)
+        //let dateAux = currentDate//.toLocaleDateString('pt-BR');
+        //let newDate = dateAux//dateAux.substring(3, 5) + "/" + dateAux.substring(0, 2) + "/20" + dateAux.substring(6, 8)
 
-        setVencimento(newDate);
-        setDate(currentDate);
+        let newDate = moment(currentDate).format("DD/MM/yyyy");
+        console.log(newDate);
+
+        setVencimento(newDate.toString());
+        setDate(newDate.toString());
 
     };
 
@@ -172,6 +181,7 @@ const New = ({ navigation, route }) => {
                         is24Hour={true}
                         display="default"
                         onChange={onChange}
+                        dateFormat="shortdate"
                     />
                     )}
                 </View>

@@ -1,23 +1,23 @@
 import React, { useState, useEffect } from 'react'
-import { StyleSheet, Text, View, TouchableOpacity, FlatList } from 'react-native'
+import { StyleSheet, Text, View, TouchableOpacity, FlatList, SafeAreaView } from 'react-native'
 
 import { Picker } from '@react-native-picker/picker';
 
-import { ListItem, Avatar, Button, Icon } from 'react-native-elements'
+import { ListItem, Avatar, Icon } from 'react-native-elements'
 
 import { useIsFocused } from '@react-navigation/native'
-
 import { useNavigation } from '@react-navigation/core';
 
 import { Entypo } from '@expo/vector-icons';
 
 import firebase from '../../config/Firebase';
-import { SafeAreaView } from 'react-native';
 import { Alert } from 'react-native';
 
 import { StatusBar } from 'expo-status-bar';
 
 import { returnCategoryName, returnIconName, returnCategoryColor } from '../../functions';
+
+//import moment from 'moment';
 
 import {
     PieChart,
@@ -115,6 +115,8 @@ const Home = ({ route }) => {
 
         let categLocal = [];
 
+
+
         database.collection(userId)
             .get()
             .then((querySnapshot) => {
@@ -136,16 +138,13 @@ const Home = ({ route }) => {
                     })
 
                     setCategories(categLocal);
+                    setGeral(categories);
+
                 })
 
-
-                //setGeral(categories);
             })
 
         setGeral(categories);
-        console.log(categories.length)
-
-        console.log("----------------------------------------------")
 
         let copyCategory = []
         let copyGeral = geral;
@@ -167,33 +166,32 @@ const Home = ({ route }) => {
 
                 if (sum > 0) {
                     copyCategory.push({ name: name, value: sum.toFixed(2) });
-                    console.log({ name: name, value: sum.toFixed(2) })
                 }
             }
 
         })
 
-        console.log(copyCategory.length)
         setGeral([])
         setGeral(copyCategory);
 
         var chartCategories = [];
+        setCategorias([]);
+
         copyCategory.map((v, i) => {
 
-            console.log(parseFloat(v.value).toFixed(0).toString())
+            let population = Number(parseFloat(v.value).toFixed(0));
+            console.log("Population:" + population)
 
             chartCategories.push({
                 "name": returnCategoryName(v.name),
-                "population": parseFloat(v.value).toFixed(0).toString(),
+                "population": population,
                 "color": returnCategoryColor(v.name),
                 "legendFontColor": returnCategoryColor(v.name),
-                "legendFontSize": 13
-
+                "legendFontSize": 13,
             })
-
-            setCategorias(chartCategories)
-
         })
+
+        setCategorias(chartCategories)
 
     }
 
@@ -704,7 +702,7 @@ const Home = ({ route }) => {
                                     <ListItem.Subtitle style={{ fontFamily: 'Roboto_300Light' }}>{formatData(item.data.toString())}</ListItem.Subtitle>
                                 </ListItem.Content>
                                 <ListItem.Chevron
-                                    size={40}
+                                    size={45}
                                     onPress={() => editItem(item)}
                                 />
 
