@@ -321,6 +321,7 @@ const styles = StyleSheet.create({
         padding: 10,
     },
     labelFieldPicker: {
+        fontFamily: 'Roboto_300Light',
         marginLeft: -10,
         padding: 10,
         color: '#BDBDBD',
@@ -336,11 +337,13 @@ const styles = StyleSheet.create({
         marginBottom: 10,
     },
     labelField: {
+        fontFamily: 'Roboto_300Light',
         color: '#BDBDBD',
         fontWeight: 'bold',
         marginBottom: 10,
     },
     textField: {
+        fontFamily: 'Roboto_300Light',
         width: '100%',
         backgroundColor: '#F2F2F2',
         height: 47,
@@ -373,6 +376,7 @@ const styles = StyleSheet.create({
         marginTop: 10,
     },
     buttonDeleteText: {
+        fontFamily: 'Roboto_700Bold',
         color: '#FFF',
         fontSize: 16,
         fontWeight: 'bold'
@@ -388,8 +392,9 @@ const styles = StyleSheet.create({
         marginTop: 15,
     },
     buttonUndoText: {
+        fontFamily: 'Roboto_700Bold',
         color: '#FFF',
         fontSize: 16,
-        fontWeight: 'bold'
+        //fontWeight: 'bold'
     },
 })

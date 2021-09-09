@@ -93,7 +93,7 @@ const New = ({ navigation, route }) => {
 
                 centerComponent={
                     <View style={{ width: '100%', justifyContent: 'center', alignItems: 'flex-start', height: 100 }}>
-                        <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#FFF' }}>Incluindo uma conta</Text>
+                        <Text style={{ fontSize: 20, color: '#FFF', fontFamily: 'Roboto_700Bold' }}>Incluindo uma conta</Text>
                     </View>
                 }
             />
@@ -205,6 +205,7 @@ const styles = StyleSheet.create({
         padding: 10,
     },
     labelFieldPicker: {
+        fontFamily: 'Roboto_300Light',
         marginLeft: -10,
         padding: 10,
         color: '#BDBDBD',
@@ -220,11 +221,13 @@ const styles = StyleSheet.create({
         marginBottom: 10,
     },
     labelField: {
+        fontFamily: 'Roboto_300Light',
         color: '#BDBDBD',
         fontWeight: 'bold',
         marginBottom: 10,
     },
     textField: {
+        fontFamily: 'Roboto_300Light',
         width: '100%',
         backgroundColor: '#F2F2F2',
         height: 47,

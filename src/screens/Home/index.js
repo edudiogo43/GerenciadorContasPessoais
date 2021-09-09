@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useLayoutEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import { StyleSheet, Text, View, TouchableOpacity, FlatList } from 'react-native'
 
 import { Picker } from '@react-native-picker/picker';
@@ -17,6 +17,22 @@ import { Alert } from 'react-native';
 
 import { StatusBar } from 'expo-status-bar';
 
+import { returnCategoryName, returnIconName, returnCategoryColor } from '../../functions';
+
+import {
+    PieChart,
+} from 'react-native-chart-kit'
+
+import { Dimensions } from 'react-native'
+const screenWidth = Dimensions.get('window').width
+
+const chartConfig = {
+    backgroundGradientFrom: '#000000',
+    backgroundGradientTo: '#cccccc',
+    color: (opacity = 1) => `rgba(26, 255, 146, ${opacity})`,
+    fontFamily: 'Roboto_900Black'
+}
+
 const Home = ({ route }) => {
 
     const navigation = useNavigation();
@@ -26,15 +42,21 @@ const Home = ({ route }) => {
     const [selectedStatus, setSelectedStatus] = useState(route.params?.selectedStatus);
     const [selectedMonth, setSelectedMonth] = useState();
     const [visible, setVisible] = useState(false);
+    const [closed, setClosed] = useState(false);
+    const [closedChart, setClosedChart] = useState(false);
+
+    const [geral, setGeral] = useState([]);
+    const [categorias, setCategorias] = useState([]);
 
     const userId = route.params?.userId;
     const database = firebase.firestore();
     const isFocused = useIsFocused()
 
     const monthNames = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
-
     const currentYear = new Date().getFullYear();
     const [currentMonth, setCurrentMonth] = useState(new Date().getMonth());
+
+    const [categories, setCategories] = useState([]);
 
     const onchange = (text) => {
         if (text == null) return false
@@ -80,12 +102,8 @@ const Home = ({ route }) => {
         reloadBills(selectedStatus);
 
         if (!selectedMonth) {
-            console.log("nao achou selectedMonth")
             setSelectedMonth(monthNames[currentMonth]);
         }
-
-        console.log(selectedMonth);
-
 
     }, [isFocused])
 
@@ -94,6 +112,8 @@ const Home = ({ route }) => {
 
         let abertos = 0;
         let pagos = 0;
+
+        let categLocal = [];
 
         database.collection(userId)
             .get()
@@ -109,8 +129,71 @@ const Home = ({ route }) => {
 
                     setPago(pagos.toFixed(2));
                     setAberto(abertos.toFixed(2));
+
+                    categLocal.push({
+                        "name": doc.data().tipo,
+                        "value": doc.data().valor.toString(),
+                    })
+
+                    setCategories(categLocal);
                 })
+
+
+                //setGeral(categories);
             })
+
+        setGeral(categories);
+        console.log(categories.length)
+
+        console.log("----------------------------------------------")
+
+        let copyCategory = []
+        let copyGeral = geral;
+
+        geral.map((v, i) => {
+
+            let name = v.name;
+            let sum = 0;
+
+            if (!copyCategory.find(element => element.name === name)) {
+
+                copyGeral.map((v, i) => {
+
+                    if (v.name === name) {
+                        sum = sum + parseFloat(v.value);
+                    }
+
+                })
+
+                if (sum > 0) {
+                    copyCategory.push({ name: name, value: sum.toFixed(2) });
+                    console.log({ name: name, value: sum.toFixed(2) })
+                }
+            }
+
+        })
+
+        console.log(copyCategory.length)
+        setGeral([])
+        setGeral(copyCategory);
+
+        var chartCategories = [];
+        copyCategory.map((v, i) => {
+
+            console.log(parseFloat(v.value).toFixed(0).toString())
+
+            chartCategories.push({
+                "name": returnCategoryName(v.name),
+                "population": parseFloat(v.value).toFixed(0).toString(),
+                "color": returnCategoryColor(v.name),
+                "legendFontColor": returnCategoryColor(v.name),
+                "legendFontSize": 13
+
+            })
+
+            setCategorias(chartCategories)
+
+        })
 
     }
 
@@ -143,7 +226,7 @@ const Home = ({ route }) => {
     }
 
     const formatData = (dateAux) => {
-        return dateAux.substring(3, 5) + "/" + dateAux.substring(0, 2) + "/20" + dateAux.substring(6, 8)
+        return dateAux; //.substring(3, 5) + "/" + dateAux.substring(0, 2) + "/20" + dateAux.substring(6, 8)
     }
 
     const formatValor = (valAux) => {
@@ -203,6 +286,7 @@ const Home = ({ route }) => {
                 style="light"
             />
 
+            {/* Header */}
             <View style={{
                 paddingTop: 5,
                 height: 180,
@@ -215,7 +299,7 @@ const Home = ({ route }) => {
                     <Picker
                         dropdownIconColor="#FFF"
                         selectedValue={selectedStatus}
-                        style={{ width: 250, color: "#FFF", left: -8 }}
+                        style={{ width: 250, color: "#FFF", left: -8, fontFamily: 'Roboto_300Light' }}
                         onValueChange={(itemValue, itemIndex) => (
                             onchange(itemValue)
                         )
@@ -228,8 +312,8 @@ const Home = ({ route }) => {
                     <View style={{ marginTop: 15, flexDirection: 'row', justifyContent: 'space-evenly', width: '100%' }}>
 
                         <View style={{ justifyContent: 'center', alignItems: 'center' }}>
-                            <Text style={{ fontWeight: 'bold', color: "#CCC", fontSize: 12 }}>Contas Pagas </Text>
-                            <Text style={{ fontWeight: 'bold', color: "#FFF", fontSize: 15 }}>{visible ? "R$ " + pago : "-"}</Text>
+                            <Text style={{ color: "#CCC", fontSize: 12, fontFamily: 'Roboto_700Bold' }}>Contas Pagas </Text>
+                            <Text style={{ color: "#FFF", fontSize: 15, fontFamily: 'Roboto_700Bold' }}>{visible ? "R$ " + pago : "-"}</Text>
                         </View>
 
                         <View style={{ justifyContent: 'center', alignItems: 'center' }}>
@@ -243,8 +327,8 @@ const Home = ({ route }) => {
                         </View>
 
                         <View style={{ justifyContent: 'center', alignItems: 'center' }}>
-                            <Text style={{ fontWeight: 'bold', color: "#CCC", fontSize: 12 }}>Em aberto</Text>
-                            <Text style={{ fontWeight: 'bold', color: "#FFF", fontSize: 15 }}> {visible ? "R$ " + aberto : "-"}</Text>
+                            <Text style={{ color: "#CCC", fontSize: 12, fontFamily: 'Roboto_700Bold' }}>Em aberto</Text>
+                            <Text style={{ color: "#FFF", fontSize: 15, fontFamily: 'Roboto_700Bold' }}> {visible ? "R$ " + aberto : "-"}</Text>
                         </View>
 
                     </View>
@@ -264,6 +348,7 @@ const Home = ({ route }) => {
                         </TouchableOpacity>
 
                         <Text style={{
+                            fontFamily: 'Roboto_500Medium',
                             fontSize: 14,
                             color: '#CCC'
                         }}>{selectedMonth}</Text>
@@ -294,7 +379,301 @@ const Home = ({ route }) => {
 
             </View>
 
+            {/* Visao Geral */}
 
+            {closed &&
+
+                <View style={{
+                    margin: 10,
+                    backgroundColor: '#fff',
+                    height: 50,
+                    padding: 20,
+                    borderRadius: 12,
+                    shadowColor: '#171717',
+                    shadowOffset: { width: -2, height: 4 },
+                    shadowOpacity: 0.9,
+                    shadowRadius: 3,
+                    elevation: 5,
+                    shadowColor: '#52006A',
+                }}>
+
+                    <View style={{
+                        width: '100%',
+                        height: '100%',
+                        backgroundColor: '#fff',
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        justifyContent: 'space-between'
+                    }}>
+                        <Text style={{ fontSize: 16, fontWeight: '400', fontFamily: 'Roboto_500Medium' }}>Visão Geral</Text>
+
+                        <TouchableOpacity
+                            style={{ backgroundColor: '#fff', width: 25, height: 25, justifyContent: 'center', alignItems: 'center' }}
+                            onPress={() => setClosed(false)}
+                        >
+                            <Entypo name="chevron-down" size={20} color="black" />
+                        </TouchableOpacity>
+
+                    </View>
+
+                </View>
+            }
+
+            {!closed &&
+                <View style={{
+                    flexWrap: 'wrap',
+                    margin: 10,
+                    backgroundColor: '#fff',
+                    padding: 20,
+                    borderRadius: 12,
+                    shadowColor: '#171717',
+                    shadowOffset: { width: -2, height: 4 },
+                    shadowOpacity: 0.9,
+                    shadowRadius: 3,
+                    elevation: 5,
+                    shadowColor: '#52006A',
+                }}>
+                    <View style={{
+                        width: '100%',
+                        backgroundColor: '#FFF',
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        justifyContent: 'space-between'
+                    }}>
+                        <Text style={{ fontSize: 16, fontWeight: '400', fontFamily: 'Roboto_500Medium' }}>Visão Geral</Text>
+
+                        <TouchableOpacity
+                            style={{ backgroundColor: '#fff', width: 25, height: 25, justifyContent: 'center', alignItems: 'center' }}
+                            onPress={() => setClosed(true)}
+                        >
+                            <Entypo name="chevron-up" size={20} color="black" />
+                        </TouchableOpacity>
+
+                    </View>
+
+                    <View style={{ marginTop: 10, backgroundColor: '#fff', width: '100%', margin: 0 }}>
+
+                        {geral.map((v, i) =>
+
+                            <>
+                                <View
+                                    key={i}
+                                    style={{
+                                        marginTop: 10,
+                                        justifyContent: 'space-between',
+                                        alignItems: 'center',
+                                        flexDirection: 'row'
+                                    }}>
+
+                                    <View style={{
+                                        backgroundColor: '#fff',
+                                        width: 250,
+                                        flexDirection: 'row',
+                                        alignItems: 'center',
+                                        justifyContent: 'flex-start'
+                                    }}>
+                                        {returnIconName(v.name)}
+                                        <Text> </Text>
+                                        <Text style={{ fontFamily: 'Roboto_300Light' }}>{returnCategoryName(v.name)}</Text>
+                                    </View>
+
+                                    <Text style={{ fontWeight: '600', fontFamily: 'Roboto_500Medium' }}>R$ {v.value}</Text>
+                                </View>
+
+                                <View
+                                    style={{
+                                        marginTop: 1,
+                                    }}
+                                />
+
+                            </>
+
+                        )}
+
+                        {/* <View style={{
+                            marginTop: 10,
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            flexDirection: 'row'
+                        }}>
+                            <View style={{
+                                backgroundColor: '#fff',
+                                width: 250,
+                                flexDirection: 'row',
+                                alignItems: 'center',
+                                justifyContent: 'flex-start'
+                            }}>
+
+                                <AntDesign name="creditcard" size={20} color="#9B51E0" />
+                                <Text> </Text>
+                                <Text style={{ fontFamily: 'Roboto_300Light' }}>Cartão de Crédito</Text>
+                            </View>
+                            <Text style={{ fontWeight: '600', fontFamily: 'Roboto_500Medium' }}>R$ 3589,15</Text>
+                        </View>
+
+                        <View style={{
+                            marginTop: 10,
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            flexDirection: 'row'
+                        }}>
+                            <View style={{
+                                backgroundColor: '#fff',
+                                width: 250,
+                                flexDirection: 'row',
+                                alignItems: 'center',
+                                justifyContent: 'flex-start'
+                            }}>
+
+                                <FontAwesome name="wifi" size={20} color="#9B51E0" />
+                                <Text> </Text>
+                                <Text style={{ fontFamily: 'Roboto_300Light' }}>Internet</Text>
+                            </View>
+                            <Text style={{ fontWeight: '600', fontFamily: 'Roboto_500Medium' }}>R$ 159,99</Text>
+                        </View>
+
+                        <View style={{
+                            marginTop: 10,
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            flexDirection: 'row'
+                        }}>
+                            <View style={{
+                                backgroundColor: '#fff',
+                                width: 250,
+                                flexDirection: 'row',
+                                alignItems: 'center',
+                                justifyContent: 'flex-start'
+                            }}>
+
+                                <FontAwesome name="bank" size={20} color="#9B51E0" />
+                                <Text> </Text>
+                                <Text style={{ fontFamily: 'Roboto_300Light' }}>Empréstimos</Text>
+                            </View>
+                            <Text style={{ fontWeight: '600', fontFamily: 'Roboto_500Medium' }}>1745,00</Text>
+                        </View>
+
+                        <View style={{
+                            marginTop: 10,
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            flexDirection: 'row'
+                        }}>
+                            <View style={{
+                                backgroundColor: '#fff',
+                                width: 250,
+                                flexDirection: 'row',
+                                alignItems: 'center',
+                                justifyContent: 'flex-start'
+                            }}>
+
+                                <Ionicons name="ios-school" size={20} color="#9B51E0" />
+                                <Text> </Text>
+                                <Text style={{ fontFamily: 'Roboto_300Light' }}>Educação</Text>
+                            </View>
+                            <Text style={{ fontWeight: '600', fontFamily: 'Roboto_500Medium' }}>950,87</Text>
+                        </View> */}
+
+
+                    </View>
+
+                </View>
+
+            }
+
+            {/* Gráfico */}
+
+            {closedChart &&
+
+                <View style={{
+                    margin: 10,
+                    backgroundColor: '#fff',
+                    height: 50,
+                    padding: 20,
+                    borderRadius: 12,
+                    shadowColor: '#171717',
+                    shadowOffset: { width: -2, height: 4 },
+                    shadowOpacity: 0.9,
+                    shadowRadius: 3,
+                    elevation: 5,
+                    shadowColor: '#52006A',
+                }}>
+
+                    <View style={{
+                        width: '100%',
+                        height: '100%',
+                        backgroundColor: '#fff',
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        justifyContent: 'space-between'
+                    }}>
+                        <Text style={{ fontSize: 16, fontWeight: '400', fontFamily: 'Roboto_500Medium' }}>Despesas por Categorias</Text>
+
+                        <TouchableOpacity
+                            style={{ backgroundColor: '#fff', width: 25, height: 25, justifyContent: 'center', alignItems: 'center' }}
+                            onPress={() => setClosedChart(false)}
+                        >
+                            <Entypo name="chevron-down" size={20} color="black" />
+                        </TouchableOpacity>
+
+                    </View>
+
+                </View>
+            }
+
+
+            {!closedChart &&
+
+                <View style={{
+                    margin: 10,
+                    backgroundColor: '#fff',
+                    height: 250,
+                    padding: 10,
+                    borderRadius: 12,
+                    shadowColor: '#171717',
+                    shadowOffset: { width: -2, height: 4 },
+                    shadowOpacity: 0.9,
+                    shadowRadius: 3,
+                    elevation: 5,
+                    shadowColor: '#52006A',
+                }}>
+
+                    <View style={{
+                        width: '100%',
+                        backgroundColor: '#FFF',
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        justifyContent: 'space-between'
+                    }}>
+                        <Text style={{ fontSize: 16, fontWeight: '400', fontFamily: 'Roboto_500Medium' }}>Despesas por Categorias</Text>
+
+                        <TouchableOpacity
+                            style={{ backgroundColor: '#fff', width: 25, height: 25, justifyContent: 'center', alignItems: 'center', marginRight: 10 }}
+                            onPress={() => setClosedChart(true)}
+                        >
+                            <Entypo name="chevron-up" size={20} color="black" />
+                        </TouchableOpacity>
+
+                    </View>
+
+
+                    <PieChart
+                        data={categorias}
+                        width={screenWidth - 50}
+                        height={200}
+                        chartConfig={chartConfig}
+                        accessor="population"
+                        backgroundColor="transparent"
+                        paddingLeft="-5"
+                        style={{ fontFamily: 'Roboto_300Light' }}
+                    />
+
+                </View>
+
+            }
+
+
+            {/* Lista de contas */}
             <View style={{
                 flex: 2
             }}>
@@ -320,9 +699,9 @@ const Home = ({ route }) => {
                                 />
 
                                 <ListItem.Content style={{}}>
-                                    <ListItem.Title>{item.descricao}</ListItem.Title>
-                                    <ListItem.Subtitle>R$ {formatValor(item.valor)}</ListItem.Subtitle>
-                                    <ListItem.Subtitle>{formatData(item.data.toString())}</ListItem.Subtitle>
+                                    <ListItem.Title style={{ fontFamily: 'Roboto_700Bold' }}>{item.descricao}</ListItem.Title>
+                                    <ListItem.Subtitle style={{ fontFamily: 'Roboto_300Light' }}>R$ {formatValor(item.valor)}</ListItem.Subtitle>
+                                    <ListItem.Subtitle style={{ fontFamily: 'Roboto_300Light' }}>{formatData(item.data.toString())}</ListItem.Subtitle>
                                 </ListItem.Content>
                                 <ListItem.Chevron
                                     size={40}
@@ -338,7 +717,6 @@ const Home = ({ route }) => {
 
             <View style={{
                 flex: 0.25,
-                //backgroundColor: '#000',
                 width: '100%',
                 marginLeft: 0,
                 justifyContent: 'center',
@@ -378,36 +756,6 @@ const styles = StyleSheet.create({
     container: {
         backgroundColor: '#FFF',
         flex: 1,
+        fontFamily: 'Roboto_300Light'
     }
-    ,
-    dropdown: {
-        backgroundColor: 'white',
-        borderBottomColor: 'gray',
-        borderBottomWidth: 0.5,
-        marginTop: 20,
-    },
-    dropdown2: {
-        backgroundColor: 'white',
-        borderColor: 'gray',
-        borderWidth: 0.5,
-        marginTop: 20,
-        padding: 8,
-    },
-    icon: {
-        marginRight: 5,
-        width: 18,
-        height: 18,
-    },
-    item: {
-        paddingVertical: 17,
-        paddingHorizontal: 4,
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-    },
-    textItem: {
-        flex: 1,
-        fontSize: 16,
-    },
-
 })

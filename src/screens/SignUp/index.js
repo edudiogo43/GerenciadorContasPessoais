@@ -119,7 +119,7 @@ const SignIn = () => {
                 <TouchableOpacity
                     onPress={() => navigation.navigate('SignIn')}
                 >
-                    <Text style={{ fontSize: 12, color: "#BDBDBD" }}>Já tem cadastro, faça login aqui !</Text>
+                    <Text style={{ fontSize: 12, color: "#BDBDBD", fontFamily: 'Roboto_400Regular', }}>Já tem cadastro, faça login aqui !</Text>
                 </TouchableOpacity>
             </View>
 
@@ -145,11 +145,13 @@ const styles = StyleSheet.create({
         padding: 20,
     },
     title: {
+        fontFamily: 'Roboto_400Regular',
         fontSize: 24,
         color: '#9B51E0',
         top: -50,
     },
     subTitle: {
+        fontFamily: 'Roboto_400Regular',
         fontSize: 16,
         color: '#BDBDBD',
         top: -50,
@@ -158,6 +160,7 @@ const styles = StyleSheet.create({
         flexDirection: 'column',
     },
     textField: {
+        fontFamily: 'Roboto_300Light',
         width: '100%',
         height: 42,
         backgroundColor: '#F2F2F2',
@@ -175,6 +178,7 @@ const styles = StyleSheet.create({
         marginTop: 10,
     },
     textButton: {
+        fontFamily: 'Roboto_400Regular',
         color: '#fff',
         fontSize: 16,
         fontWeight: 'bold'
